@@ -11,7 +11,7 @@ struct Node {
 };
 
 struct MinHeap {
-	Node **tree;
+	Node *tree;   // Node** → Node*（実体の連続配列）
 	int size;
 };
 
@@ -24,22 +24,19 @@ MinHeap *initMinHeap(int *nums1, int *nums2, int k, int nums1Size){
 	int m = min(k, nums1Size);
 
 	mh->size = m;
-	mh->tree = calloc(m, sizeof(Node*));
+	mh->tree = malloc(m * sizeof(Node));   // ★1回だけ確保（calloc 1万回 → これ1回）
 
 	for (int i = 0; i < m; i++){
-		Node *node = calloc(1, sizeof(Node));
-		node->val = nums1[i] + nums2[0];
-		node->index1 = i;
-		node->index2 = 0;
-		mh->tree[i] = node;
+		mh->tree[i].val    = nums1[i] + nums2[0];   // Node生成せず直接代入
+		mh->tree[i].index1 = i;
+		mh->tree[i].index2 = 0;
 	}
 
 	return mh;
 }
 
-Node* pop(MinHeap *mh){
-	Node *node = mh->tree[0];
-	return node;
+Node pop(MinHeap *mh){      // Node* → Node（値で返す。reheapifyで上書きされても安全）
+	return mh->tree[0];
 }
 
 // こんな感じ完
@@ -50,16 +47,16 @@ void shift_down(MinHeap *mh){
 		int smallest_index = based1_index;
 
 		if (2 * based1_index <= mh->size){
-			smallest_index = mh->tree[smallest_index - 1]->val < mh->tree[2 * based1_index - 1]->val ? smallest_index : 2 * based1_index;
+			smallest_index = mh->tree[smallest_index - 1].val < mh->tree[2 * based1_index - 1].val ? smallest_index : 2 * based1_index;
 		}
 
 		if (2 * based1_index + 1 <= mh->size){
-			smallest_index = mh->tree[smallest_index - 1]->val < mh->tree[2 * based1_index]->val ? smallest_index : 2 * based1_index + 1;
+			smallest_index = mh->tree[smallest_index - 1].val < mh->tree[2 * based1_index].val ? smallest_index : 2 * based1_index + 1;
 		}
 
 		if (smallest_index == based1_index) break;
 
-		Node *tmp = mh->tree[based1_index - 1];
+		Node tmp = mh->tree[based1_index - 1];          // 値のswap（int3個のコピー）
 		mh->tree[based1_index - 1] = mh->tree[smallest_index - 1];
 		mh->tree[smallest_index - 1] = tmp;
 
@@ -71,9 +68,9 @@ void shift_up(MinHeap *mh){
 	int based1_index = mh->size;
 
 	while(based1_index > 1){
-		if (mh->tree[based1_index - 1]->val >= mh->tree[(based1_index/2) - 1]->val) break;
+		if (mh->tree[based1_index - 1].val >= mh->tree[(based1_index/2) - 1].val) break;
 
-		Node *tmp = mh->tree[(based1_index/2) - 1];
+		Node tmp = mh->tree[(based1_index/2) - 1];
 		mh->tree[(based1_index/2) - 1] = mh->tree[based1_index - 1];
 		mh->tree[based1_index - 1] = tmp;
 
@@ -84,25 +81,20 @@ void shift_up(MinHeap *mh){
 }
 
 void push(MinHeap *mh, int *nums1, int *nums2, int index1, int index2 ){
-	Node *node = calloc(1, sizeof(Node));
-	node->val = nums1[index1] + nums2[index2];
-	node->index1 = index1;
-	node->index2 = index2;
-
-	mh->tree[mh->size] = node;
+	mh->tree[mh->size].val    = nums1[index1] + nums2[index2];   // 確保せず代入
+	mh->tree[mh->size].index1 = index1;
+	mh->tree[mh->size].index2 = index2;
 	mh->size += 1;
 
 	return;
 }
 
 void changeRootHeapify(MinHeap *mh){
-	Node *node = mh->tree[mh->size - 1];
-	mh->tree[mh->size - 1] = NULL;
-	mh->tree[0] = node;
+	mh->tree[0] = mh->tree[mh->size - 1];   // 末尾を根へ（値コピー）。NULL代入は不要
 	mh->size -= 1;
 
 	shift_down(mh);
-	
+
 	return;
 }
 
@@ -110,8 +102,8 @@ int **kSmallestPairs(int *nums1, int nums1Size, int *nums2, int nums2Size, int k
 
 	MinHeap *mh = initMinHeap(nums1, nums2, k, nums1Size);
 
-	long total = (long)nums1Size * nums2Size;   // ← 片方を long にキャストしてから掛ける
-    int size = k < total ? k : (int)total;
+	long total = (long)nums1Size * nums2Size;   // 片方を long にキャストしてから掛ける
+	int size = k < total ? k : (int)total;
 
 	int **result = calloc(size, sizeof(int*));
 
@@ -129,17 +121,20 @@ int **kSmallestPairs(int *nums1, int nums1Size, int *nums2, int nums2Size, int k
 	}
 
 	for (int i = 0; i < *returnSize; i++) {
-		Node *poped = pop(mh);
+		Node poped = pop(mh);      // Node* → Node（値）
 		// 結果を格納
-		result[i][0] = nums1[poped->index1];
-		result[i][1] = nums2[poped->index2];
+		result[i][0] = nums1[poped.index1];
+		result[i][1] = nums2[poped.index2];
 
 		changeRootHeapify(mh);
 
 		// pushしたりしなかったりラジバンダリー
-		poped->index2 + 1 >= nums2Size ? NULL : push(mh, nums1, nums2, poped->index1, poped->index2 + 1);
+		poped.index2 + 1 >= nums2Size ? (void)0 : push(mh, nums1, nums2, poped.index1, poped.index2 + 1);
 		shift_up(mh);
 	}
+
+	free(mh->tree);   // 個別Nodeのmallocが無くなったので、まとめて解放
+	free(mh);
 
 	return result;
 }
