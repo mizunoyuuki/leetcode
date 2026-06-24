@@ -86,7 +86,9 @@ int cmpDomain(char *domain1, char *domain2){
 
 void insertEmail(HashMap *root_hash, char *email){
 	char *tmp = email;
-	int lhash_i = hashLocal(tmp);
+	char *domain = 
+
+	int lhash_i = hashLocal(tmp, );
 
 	HashMap *domain_hash = insertDomain(root_hash->buckets[lhash_i]);
 
