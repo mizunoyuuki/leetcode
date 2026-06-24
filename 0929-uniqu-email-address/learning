@@ -1,0 +1,24 @@
+## 文字列のハッシュ化   djb2
+
+unsigned int djb2(char *s){
+	unsigned int hash = 5381;
+	while (*s){
+		hash = ((hash << 5) + hash) + (unsigned char)*s++;
+	}
+}
+
+hash = hash * 33 + c
+
+を繰り返す
+
+djb2ってのは、
+Daniel J. Bernsteinって人らしい。
+Usenetのニュースグループ comp.lang.cに投稿したハッシュ関数がこのなで広まった・
+
+魔法の数字の
+33 5381
+
+
+ハッシュ関数の本質は、無限にありうる入力を、有限のビット幅(32bitで43億とおり)へ写す写像。
+
+
