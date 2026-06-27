@@ -1,17 +1,17 @@
-int subarraySum(int *nums, int numsSize, int k){
-	int i = 0;
-	int end;
-	int sum;
-	while (i < numsSize){
-		sum = 0;
-		end = i;
-		while(sum <= k && end < numsSize){
-			sum += nums[end];
-			if (sum == k) return end - i + 1;
-			end++;
-		}
-		i++;
-	}
+// 累積和・メモ化あたりの理解がしたい
+typedef struct HashMap HashMap;
 
-	return numsSize;
+struct HashMap {
+	int *buckets;
+};
+
+HashMap *initHashMap(int *nums, int numsSize){
+	int sum = 0;
+	for (int i = 0; i < numsSize; i++){
+		
+	}
+}
+
+int subarraySum(int *nums, int numsSize, int k){
+	HashMap *hm = initHashMap(nums, numsSize);
 }
